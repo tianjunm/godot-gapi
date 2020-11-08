@@ -27,7 +27,7 @@ func _query_string_from_dict(dictionary):
 				{"key": key,
 				 "val": credentials[key]})
 			query_string += "&"
-	print(query_string)
+
 	return query_string
 
 func _check_token():
@@ -50,17 +50,20 @@ func _check_token():
 
 	err = canary_request.request(google_drive_base_host, canary_headers, true, 
 			HTTPClient.METHOD_GET)
+			
+	if err != OK:
+		print("an error occured while sending the request...")
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
 #	pass
 
 func _canary_request_completed(result, response_code, headers, body):
-	print(result)
 	# HACK: might be hacky, as we assume that the error is always due to 
 	#       invalid (expired) access token, and that we will always get 
 	#       an access token with our refresh token
-	if result != OK:
+	
+	if response_code == 401:
 		print(result)
 		print("invalid access token, refreshing...")
 		var refresh_request = HTTPRequest.new()
@@ -78,7 +81,7 @@ func _canary_request_completed(result, response_code, headers, body):
 			"grant_type": "refresh_token"
 			}
 
-		var err = canary_request.request(token_host, token_headers, true, 
+		var err = refresh_request.request(token_host, token_headers, true, 
 				HTTPClient.METHOD_POST, _query_string_from_dict(data))
 		if err != OK:
 			print(err)
